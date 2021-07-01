@@ -1,9 +1,11 @@
 #include "ESP8266WiFi.h"
 #include "encoder.h"
+#include "messages.h"
 #include "motor.h"
 
 #define DEBUG
 #define USE_WIFI
+#define USE_CONTROLLER
 
 //Hardware parameters
 const int PIN_PWM_REAR = 2;         //D4
@@ -25,15 +27,47 @@ Motor motorFront(PIN_FRONT_DIR_1, PIN_FRONT_DIR_2, PIN_PWM_FRONT);
 //Wifi access point (AP) parameters:
 const char* AP_ssid = "MotorController";
 const char* AP_password = "motor12345";
-const int CHANNEL = 3;
-const bool HIDE_AP = true;
 
 //Wifi related variables:
-static WiFiClient wifiClient;
-const char* clientAddress = "192.168.4.1";
-const int clientPort = 80;
+static WiFiClient wifiController;
+const char* controllerAddress = "192.168.4.1";
+const int controllerPort = 80;
 
 #endif
+
+
+//Function to initialize connection with remote controller
+void connectController()
+{
+  if (!wifiController.connected())
+  {
+    if (!wifiController.connect(controllerAddress, controllerPort))
+    {
+#ifdef DEBUG
+      Serial.println("Unable to connect controller");
+#endif
+      
+      return;
+    }
+#ifdef DEBUG
+    Serial.println("Connected to controller:");
+    Serial.print("- ip: ");
+    Serial.println(controllerAddress);
+    Serial.print("- port: ");
+    Serial.println(controllerPort);
+#endif
+  }
+}
+
+//Function to read new commands from the controller
+void listenControllerCommands()
+{
+  //Verify connection still exist
+  if(wifiController.connected())
+  {
+    //
+  }
+}
 
 void setup() {
 
@@ -72,8 +106,33 @@ void setup() {
 }
 
 void loop() {
+
+#ifdef USE_CONTROLLER
+  connectController();
+#endif
+
+
+  if (wifiController && wifiController.available())
+  {
+    msg::err = deserializeJson(msg::msg, wifiController);
+    if (msg::err)
+    {
+#ifdef DEBUG
+      Serial.print(F("deserializeJson() failed: "));
+      Serial.println(msg::err.f_str());
+#endif
+    }
+    else
+    {
+      int s = msg::msg["speed"];
+      Serial.println(s);
+      motorRear.changeSpeed(s);
+      motorRear.run();
+    }
+  }
+  
   // put your main code here, to run repeatedly:
-  delay(1000);
+  /*delay(1000);
   //motorRear.stop();
   motorRear.changeSpeed(50);
   delay(1000);
@@ -83,7 +142,7 @@ void loop() {
   motorRear.run();
   delay(1000);
   motorRear.forward();
-  motorRear.run();
+  motorRear.run();*/
   
 
 }
