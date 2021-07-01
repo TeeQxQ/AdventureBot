@@ -60,11 +60,11 @@
       if (this->direction == Motor::Direction::CLOCKWISE)
       {
         digitalWrite(this->config.pin_direction_in1, LOW);
-        digitalWrite(this->config.pin_direction_in2, LOW);
+        digitalWrite(this->config.pin_direction_in2, HIGH);
       }
       else
       {
-        digitalWrite(this->config.pin_direction_in1, LOW);
+        digitalWrite(this->config.pin_direction_in1, HIGH);
         digitalWrite(this->config.pin_direction_in2, LOW);
       }
 
@@ -93,12 +93,34 @@
     {
       analogWrite(this->config.pin_pwm, this->convertSpeedToPWM());
     }
+
+    void changeDirection()
+    {
+      if (this->direction == Motor::Direction::CLOCKWISE)
+      {
+        this->direction = Motor::Direction::COUNTERCLOCKWISE;
+      }
+      else
+      {
+        this->direction = Motor::Direction::CLOCKWISE;
+      }
+    }
+
+    void reverse()
+    {
+      this->direction = Motor::Direction::COUNTERCLOCKWISE;
+    }
+
+    void forward()
+    {
+      this->direction = Motor::Direction::CLOCKWISE;
+    }
     
 
   private:
     const int MAX_SPEED = 100;
     const int MIN_SPEED = 0;
-    const int MAX_PWM_SPEED = 255;
+    const int MAX_PWM_SPEED = PWMRANGE;
     const int MIN_PWM_SPEED = 0;
     const Motor::Config config;
     Motor::Direction direction = Motor::Direction::CLOCKWISE;
