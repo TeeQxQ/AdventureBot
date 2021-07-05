@@ -1,9 +1,27 @@
+#define DEBUG
+#define CREATE_AP
+#define USE_DISPLAY
+
 #include "ESP8266WiFi.h"
 #include "messages.h"
 #include "WiFiUdp.h"
 
-#define DEBUG
-#define CREATE_AP
+#ifdef USE_DISPLAY
+#include "Adafruit_GFX.h"
+#include "Adafruit_SSD1306.h"
+#include "Wire.h"
+
+const int SCREEN_WIDTH = 128; // OLED display width, in pixels
+const int SCREEN_HEIGHT = 64; // OLED display height, in pixels
+const int SCREEN_WIDTH_HALF = SCREEN_WIDTH / 2;
+const int SCREEN_HEIGHT_HALF = SCREEN_HEIGHT / 2;
+const int TEXT_SIZE = 4;
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+#endif
+
 
 //Hardware parameters
 const int PIN_BTN_LEFT_UP = 14;   //D5
@@ -11,6 +29,7 @@ const int PIN_BTN_LEFT_DOWN = 12; //D6
 const int PIN_BTN_RIGHT_UP = 0;   //D3
 const int PIN_BTN_RIGHT_DOWN = 2; //D4
 const int PIN_POT = A0;           //Analog input
+const int I2C_ADD = 0x3C;
 
 //Wifi access point (AP) parameters:
 const char* AP_ssid = "MotorController";
@@ -89,6 +108,15 @@ void setup() {
   delay(1000);
 #endif
 
+#ifdef USE_DISPLAY
+  if(!display.begin(SSD1306_SWITCHCAPVCC, I2C_ADD)) { // Address 0x3D for 128x64
+#ifdef DEBUG
+    Serial.println(F("SSD1306 display allocation failed"));
+#endif
+    for(;;);
+  }
+#endif
+
 #ifdef CREATE_AP
   createSoftAP();
 #else
@@ -109,7 +137,20 @@ void loop() {
 
   delay(100);
 
-  udpPacket[0] = convertPotentiometerToProcent();
+  int potValue = convertPotentiometerToProcent();
+
+#ifdef USE_DISPLAY
+
+  display.clearDisplay();
+
+  display.setTextSize(TEXT_SIZE);
+  display.setTextColor(WHITE);
+  display.setCursor(SCREEN_WIDTH_HALF/2, SCREEN_HEIGHT_HALF/2);
+  display.println(potValue);
+  display.display(); 
+#endif
+
+  udpPacket[0] = potValue;
   udpPacket[1] = digitalRead(PIN_BTN_LEFT_UP);
   udpPacket[2] = digitalRead(PIN_BTN_LEFT_DOWN);
   udpLeft.beginPacket(IP_LEFT, UDP_PORT_LEFT);
@@ -120,6 +161,6 @@ void loop() {
   udpPacket[2] = digitalRead(PIN_BTN_RIGHT_DOWN);
   udpRight.beginPacket(IP_RIGHT, UDP_PORT_RIGHT);
   udpRight.write(udpPacket);
-  udpRight.endPacket();
+  udpRight.endPacket();          
 
 }
