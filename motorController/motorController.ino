@@ -7,6 +7,7 @@
 #define DEBUG
 #define USE_WIFI
 #define USE_CONTROLLER
+//#define USE_ENCODER
 
 //Hardware parameters
 const int PIN_PWM_REAR = 2;         //D4
@@ -15,28 +16,27 @@ const int PIN_REAR_DIR_1 = 0;       //D3
 const int PIN_REAR_DIR_2 = 4;       //D2
 const int PIN_FRONT_DIR_1 = 5;      //D1
 const int PIN_FRONT_DIR_2 = 12;     //D6
-/*const int PIN_REAR_ENCODER_A = 0;
+
+#ifdef USE_ENCODER
+const int PIN_REAR_ENCODER_A = 0;
 const int PIN_REAR_ENCODER_B = 0;
 const int PIN_FRONT_ENCODER_A = 0;
-const int PIN_FRONT_ENCODER_B = 0;*/
+const int PIN_FRONT_ENCODER_B = 0;
+#endif
 
 Motor motorRear(PIN_REAR_DIR_1, PIN_REAR_DIR_2, PIN_PWM_REAR);
 Motor motorFront(PIN_FRONT_DIR_1, PIN_FRONT_DIR_2, PIN_PWM_FRONT);
 
 #ifdef USE_WIFI
-
 //Wifi access point (AP) parameters:
 const char* AP_ssid = "MotorController";
 const char* AP_password = "motor12345";
-
 const char* MAC_LEFT = "9C:9C:1F:45:88:6E";
 const char* MAC_RIGHT = "";
-
 IPAddress ip(192, 168, 4, 2);
 IPAddress dns(192, 168, 1, 1);
 IPAddress gateway(192, 168, 4, 1);
 IPAddress subnet(255, 255, 255, 0);
-
 #endif
 
 //UDP related parameters
@@ -61,19 +61,14 @@ void setup() {
   //IP based on mac address
   if (WiFi.macAddress() == MAC_LEFT)
   {
-    Serial.println("Lol");
     ip = IPAddress(192, 168, 4, 3);
   }
   else if (WiFi.macAddress() == MAC_RIGHT)
   {
-    //
+    ip = IPAddress(192, 168, 4, 4);
   }
 
-  //Set static ip address
-  /*IPAddress ip(192, 168, 4, 3);
-  IPAddress dns(192, 168, 1, 1);
-  IPAddress gateway(192, 168, 4, 1);
-  IPAddress subnet(255, 255, 255, 0);*/
+  //Set static ip address (based on mac)
   WiFi.config(ip, dns, gateway, subnet);
 
   //Connect to wifi network:
@@ -93,17 +88,16 @@ void setup() {
   Serial.println(WiFi.localIP());
 #endif
 
-#endif
-
   udp.begin(UDP_PORT);
 
-  //motorRear.changeSpeed(0);
-  //motorRear.run();
+#endif
 
+  motorRear.stop();
 }
 
 void loop() {
 
+#ifdef USE_WIFI
   if(udp.parsePacket())
   {
     int len = udp.read(udpPacket, UDP_PACKET_SIZE);
@@ -111,14 +105,33 @@ void loop() {
     {
       udpPacket[len] = 0;
       int speed = udpPacket[0];
+      int btnUp = udpPacket[1];
+      int btnDown = udpPacket[2];
+
+      motorRear.changeSpeed(speed);
+      
+      if (btnUp && btnDown)
+      {
+        motorRear.stop();
+      }
+      else if (!btnUp && btnDown)
+      {
+        motorRear.forward();
+        motorRear.run();
+      }
+      else if (!btnDown && btnUp)
+      {
+        motorRear.reverse();
+        motorRear.run();
+      }
       
 #ifdef DEBUG
       Serial.println(speed);
-      motorRear.changeSpeed(speed);
-      motorRear.run();
-      //Serial.println(udpPacket);
+      //motorRear.changeSpeed(speed);
+      //motorRear.run();
 #endif
     }
   }
+#endif
 
 }

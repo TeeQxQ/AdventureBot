@@ -21,7 +21,7 @@ const bool HIDE_AP = true;
 const int MAX_NOF_CLIENTS = 2;
 #endif
 
-//Measured values for potentiometer
+//Measured values for the potentiometer
 const int POT_MIN_VALUE = 1024;
 const int POT_MAX_VALUE = 2;
 
@@ -95,8 +95,6 @@ void setup() {
   connectWifi();
 #endif
 
-  Serial.println(WiFi.gatewayIP());
-
   udpLeft.begin(UDP_PORT_LEFT);
   udpRight.begin(UDP_PORT_RIGHT);
 #ifdef DEBUG
@@ -109,9 +107,19 @@ void setup() {
 
 void loop() {
 
-  udpLeft.beginPacket(IP_LEFT, UDP_PORT_LEFT);
-  udpLeft.write(convertPotentiometerToProcent());
-  udpLeft.endPacket();
   delay(100);
+
+  udpPacket[0] = convertPotentiometerToProcent();
+  udpPacket[1] = digitalRead(PIN_BTN_LEFT_UP);
+  udpPacket[2] = digitalRead(PIN_BTN_LEFT_DOWN);
+  udpLeft.beginPacket(IP_LEFT, UDP_PORT_LEFT);
+  udpLeft.write(udpPacket);
+  udpLeft.endPacket();
+
+  udpPacket[1] = digitalRead(PIN_BTN_RIGHT_UP);
+  udpPacket[2] = digitalRead(PIN_BTN_RIGHT_DOWN);
+  udpRight.beginPacket(IP_RIGHT, UDP_PORT_RIGHT);
+  udpRight.write(udpPacket);
+  udpRight.endPacket();
 
 }
