@@ -26,8 +26,12 @@ const int POT_MIN_VALUE = 1024;
 const int POT_MAX_VALUE = 2;
 
 //UDP related parameters
-WiFiUDP udp;
-const int UDP_PORT = 4210;
+WiFiUDP udpLeft;
+WiFiUDP udpRight;
+const int UDP_PORT_LEFT = 4210;
+const int UDP_PORT_RIGHT = 4210;
+const char *IP_LEFT = "192.168.4.3";
+const char *IP_RIGHT = "192.168.4.4";
 const int UDP_PACKET_SIZE = 255;
 char udpPacket[UDP_PACKET_SIZE];
 char udpReply[UDP_PACKET_SIZE];
@@ -91,19 +95,23 @@ void setup() {
   connectWifi();
 #endif
 
-  udp.begin(UDP_PORT);
+  Serial.println(WiFi.gatewayIP());
+
+  udpLeft.begin(UDP_PORT_LEFT);
+  udpRight.begin(UDP_PORT_RIGHT);
 #ifdef DEBUG
-  Serial.print("Listening on udp port: ");
-  Serial.println(UDP_PORT);
+  Serial.print("Listening on udp ports: ");
+  Serial.println(UDP_PORT_LEFT);
+  Serial.println(UDP_PORT_RIGHT);
 #endif
 
 }
 
 void loop() {
 
-  udp.beginPacket("192.168.4.2", UDP_PORT);
-  udp.write(convertPotentiometerToProcent());
-  udp.endPacket();
+  udpLeft.beginPacket(IP_LEFT, UDP_PORT_LEFT);
+  udpLeft.write(convertPotentiometerToProcent());
+  udpLeft.endPacket();
   delay(100);
 
 }

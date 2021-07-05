@@ -29,6 +29,14 @@ Motor motorFront(PIN_FRONT_DIR_1, PIN_FRONT_DIR_2, PIN_PWM_FRONT);
 const char* AP_ssid = "MotorController";
 const char* AP_password = "motor12345";
 
+const char* MAC_LEFT = "9C:9C:1F:45:88:6E";
+const char* MAC_RIGHT = "";
+
+IPAddress ip(192, 168, 4, 2);
+IPAddress dns(192, 168, 1, 1);
+IPAddress gateway(192, 168, 4, 1);
+IPAddress subnet(255, 255, 255, 0);
+
 #endif
 
 //UDP related parameters
@@ -43,12 +51,30 @@ void setup() {
 #ifdef DEBUG
   //Serial connection for debugging purposes
   Serial.begin(115200);
-  delay(100);
+  delay(1000);
 #endif
 
 #ifdef USE_WIFI
   //Explicitely define this is a station, not access point
   WiFi.mode(WIFI_STA);
+
+  //IP based on mac address
+  if (WiFi.macAddress() == MAC_LEFT)
+  {
+    Serial.println("Lol");
+    ip = IPAddress(192, 168, 4, 3);
+  }
+  else if (WiFi.macAddress() == MAC_RIGHT)
+  {
+    //
+  }
+
+  //Set static ip address
+  /*IPAddress ip(192, 168, 4, 3);
+  IPAddress dns(192, 168, 1, 1);
+  IPAddress gateway(192, 168, 4, 1);
+  IPAddress subnet(255, 255, 255, 0);*/
+  WiFi.config(ip, dns, gateway, subnet);
 
   //Connect to wifi network:
   WiFi.begin(AP_ssid, AP_password);
