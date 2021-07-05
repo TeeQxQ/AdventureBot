@@ -2,6 +2,7 @@
 #include "encoder.h"
 #include "messages.h"
 #include "motor.h"
+#include "WiFiUdp.h"
 
 #define DEBUG
 #define USE_WIFI
@@ -28,46 +29,14 @@ Motor motorFront(PIN_FRONT_DIR_1, PIN_FRONT_DIR_2, PIN_PWM_FRONT);
 const char* AP_ssid = "MotorController";
 const char* AP_password = "motor12345";
 
-//Wifi related variables:
-static WiFiClient wifiController;
-const char* controllerAddress = "192.168.4.1";
-const int controllerPort = 80;
-
 #endif
 
-
-//Function to initialize connection with remote controller
-void connectController()
-{
-  if (!wifiController.connected())
-  {
-    if (!wifiController.connect(controllerAddress, controllerPort))
-    {
-#ifdef DEBUG
-      Serial.println("Unable to connect controller");
-#endif
-      
-      return;
-    }
-#ifdef DEBUG
-    Serial.println("Connected to controller:");
-    Serial.print("- ip: ");
-    Serial.println(controllerAddress);
-    Serial.print("- port: ");
-    Serial.println(controllerPort);
-#endif
-  }
-}
-
-//Function to read new commands from the controller
-void listenControllerCommands()
-{
-  //Verify connection still exist
-  if(wifiController.connected())
-  {
-    //
-  }
-}
+//UDP related parameters
+WiFiUDP udp;
+const int UDP_PORT = 4210;
+const int UDP_PACKET_SIZE = 255;
+char udpPacket[UDP_PACKET_SIZE];
+char udpReply[UDP_PACKET_SIZE];
 
 void setup() {
 
@@ -100,49 +69,30 @@ void setup() {
 
 #endif
 
-  motorRear.changeSpeed(100);
-  motorRear.run();
+  udp.begin(UDP_PORT);
+
+  //motorRear.changeSpeed(0);
+  //motorRear.run();
 
 }
 
 void loop() {
 
-#ifdef USE_CONTROLLER
-  connectController();
-#endif
-
-
-  if (wifiController && wifiController.available())
+  if(udp.parsePacket())
   {
-    msg::err = deserializeJson(msg::msg, wifiController);
-    if (msg::err)
+    int len = udp.read(udpPacket, UDP_PACKET_SIZE);
+    if(len > 0)
     {
+      udpPacket[len] = 0;
+      int speed = udpPacket[0];
+      
 #ifdef DEBUG
-      Serial.print(F("deserializeJson() failed: "));
-      Serial.println(msg::err.f_str());
-#endif
-    }
-    else
-    {
-      int s = msg::msg["speed"];
-      Serial.println(s);
-      motorRear.changeSpeed(s);
+      Serial.println(speed);
+      motorRear.changeSpeed(speed);
       motorRear.run();
+      //Serial.println(udpPacket);
+#endif
     }
   }
-  
-  // put your main code here, to run repeatedly:
-  /*delay(1000);
-  //motorRear.stop();
-  motorRear.changeSpeed(50);
-  delay(1000);
-  motorRear.changeSpeed(100);
-  delay(1000);
-  motorRear.reverse();
-  motorRear.run();
-  delay(1000);
-  motorRear.forward();
-  motorRear.run();*/
-  
 
 }

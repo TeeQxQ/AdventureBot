@@ -1,7 +1,9 @@
 #include "ESP8266WiFi.h"
 #include "messages.h"
+#include "WiFiUdp.h"
 
 #define DEBUG
+#define CREATE_AP
 
 //Hardware parameters
 const int PIN_BTN_LEFT_UP = 14;   //D5
@@ -13,20 +15,26 @@ const int PIN_POT = A0;           //Analog input
 //Wifi access point (AP) parameters:
 const char* AP_ssid = "MotorController";
 const char* AP_password = "motor12345"; //must be >= 8 chars
-const int CHANNEL = 3;
+#ifdef CREATE_AP
+const int CHANNEL = 1;
 const bool HIDE_AP = true;
 const int MAX_NOF_CLIENTS = 2;
+#endif
 
 //Measured values for potentiometer
 const int POT_MIN_VALUE = 1024;
 const int POT_MAX_VALUE = 2;
 
-//Server related parameters:
-const int WIFI_PORT = 80;
-WiFiServer wifiServer(WIFI_PORT);
-WiFiClient *clients[MAX_NOF_CLIENTS] = { NULL };
-int nofJoinedClients = 0;
+//UDP related parameters
+WiFiUDP udp;
+const int UDP_PORT = 4210;
+const int UDP_PACKET_SIZE = 255;
+char udpPacket[UDP_PACKET_SIZE];
+char udpReply[UDP_PACKET_SIZE];
 
+int currentSpeed = 0;
+
+#ifdef CREATE_AP
 void createSoftAP()
 {
   if (!WiFi.softAP(AP_ssid, AP_password, CHANNEL, HIDE_AP, MAX_NOF_CLIENTS))
@@ -49,19 +57,20 @@ void createSoftAP()
   }
 }
 
-void checkNewClients()
+#else
+void connectWifi()
 {
-  WiFiClient newClient = wifiServer.available();
-
-  //New client found
-  if (newClient)
+  WiFi.begin(AP_ssid, AP_password);
+  while (WiFi.status() != WL_CONNECTED)
   {
-    clients[nofJoinedClients++] = new WiFiClient(newClient);
+    delay(100);
 #ifdef DEBUG
-    Serial.println("New client added");
+    Serial.print(".");
 #endif
   }
 }
+
+#endif
 
 int convertPotentiometerToProcent()
 {
@@ -73,32 +82,28 @@ void setup() {
 #ifdef DEBUG
   //Serial connection for debugging purposes
   Serial.begin(115200);
+  delay(1000);
 #endif
 
+#ifdef CREATE_AP
   createSoftAP();
+#else
+  connectWifi();
+#endif
 
-  //Start the server
-  wifiServer.begin();
+  udp.begin(UDP_PORT);
 #ifdef DEBUG
-  Serial.println("Server started");
+  Serial.print("Listening on udp port: ");
+  Serial.println(UDP_PORT);
 #endif
 
 }
 
 void loop() {
 
-  checkNewClients();
+  udp.beginPacket("192.168.4.2", UDP_PORT);
+  udp.write(convertPotentiometerToProcent());
+  udp.endPacket();
+  delay(100);
 
-  if(nofJoinedClients > 0)
-  {
-    //Construct a message
-    msg::msg["speed"] = convertPotentiometerToProcent();
-    msg::msg["left"] = 1;
-    msg::msg["right"] = 0;
-
-    //Serialize the message and send it
-    serializeJson(msg::msg, *clients[0]);
-
-    Serial.println(convertPotentiometerToProcent());
-  }
 }
