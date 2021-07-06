@@ -100,6 +100,24 @@ int convertPotentiometerToProcent()
   return map(analogRead(PIN_POT), POT_MIN_VALUE, POT_MAX_VALUE, 0, 100);
 }
 
+#ifdef USE_DISPLAY
+  void drawCenter(int value)
+  {
+    display.clearDisplay();
+    display.setTextSize(TEXT_SIZE);
+    display.setTextColor(WHITE);
+    const int charW = 24; //Width of a char at TEXT_SIZE == 4
+    const int charH = 16; //Height of a char at TEXT_SIZE == 4
+    int textLen = 1;
+    if (value >= 10) textLen = 2;
+    if (value >= 100) textLen = 3;
+    display.setCursor(SCREEN_WIDTH_HALF - textLen * charW /2, 
+                      SCREEN_HEIGHT_HALF - charW /2);
+    display.println(value);
+    display.display(); 
+  }
+#endif
+
 void setup() {
 
 #ifdef DEBUG
@@ -135,19 +153,11 @@ void setup() {
 
 void loop() {
 
-  delay(100);
-
+  delay(10);
   int potValue = convertPotentiometerToProcent();
 
 #ifdef USE_DISPLAY
-
-  display.clearDisplay();
-
-  display.setTextSize(TEXT_SIZE);
-  display.setTextColor(WHITE);
-  display.setCursor(SCREEN_WIDTH_HALF/2, SCREEN_HEIGHT_HALF/2);
-  display.println(potValue);
-  display.display(); 
+  drawCenter(potValue);
 #endif
 
   udpPacket[0] = potValue;

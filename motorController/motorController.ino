@@ -24,15 +24,15 @@ const int PIN_FRONT_ENCODER_A = 0;
 const int PIN_FRONT_ENCODER_B = 0;
 #endif
 
-Motor motorRear(PIN_REAR_DIR_1, PIN_REAR_DIR_2, PIN_PWM_REAR);
-Motor motorFront(PIN_FRONT_DIR_1, PIN_FRONT_DIR_2, PIN_PWM_FRONT);
+Motor motorRear(PIN_REAR_DIR_1, PIN_REAR_DIR_2, PIN_PWM_REAR, Motor::Direction::CLOCKWISE);
+Motor motorFront(PIN_FRONT_DIR_1, PIN_FRONT_DIR_2, PIN_PWM_FRONT, Motor::Direction::CLOCKWISE);
 
 #ifdef USE_WIFI
 //Wifi access point (AP) parameters:
 const char* AP_ssid = "MotorController";
 const char* AP_password = "motor12345";
 const char* MAC_LEFT = "9C:9C:1F:45:88:6E";
-const char* MAC_RIGHT = "";
+const char* MAC_RIGHT = "9C:9C:1F:45:BC:8F";
 IPAddress ip(192, 168, 4, 2);
 IPAddress dns(192, 168, 1, 1);
 IPAddress gateway(192, 168, 4, 1);
@@ -58,14 +58,21 @@ void setup() {
   //Explicitely define this is a station, not access point
   WiFi.mode(WIFI_STA);
 
+  Serial.println(WiFi.macAddress());
+
   //IP based on mac address
   if (WiFi.macAddress() == MAC_LEFT)
   {
     ip = IPAddress(192, 168, 4, 3);
+    motorRear.setDefaultDirection(Motor::Direction::COUNTERCLOCKWISE);
+    motorFront.setDefaultDirection(Motor::Direction::COUNTERCLOCKWISE);
   }
   else if (WiFi.macAddress() == MAC_RIGHT)
   {
     ip = IPAddress(192, 168, 4, 4);
+    motorRear.setDefaultDirection(Motor::Direction::CLOCKWISE);
+    motorFront.setDefaultDirection(Motor::Direction::CLOCKWISE);
+    Serial.println("Terve");
   }
 
   //Set static ip address (based on mac)
@@ -93,6 +100,7 @@ void setup() {
 #endif
 
   motorRear.stop();
+  motorFront.stop();
 }
 
 void loop() {
@@ -109,26 +117,40 @@ void loop() {
       int btnDown = udpPacket[2];
 
       motorRear.changeSpeed(speed);
+      motorFront.changeSpeed(speed);
       
       if (btnUp && btnDown)
       {
         motorRear.stop();
+        motorFront.stop();
       }
       else if (!btnUp && btnDown)
       {
         motorRear.forward();
+        motorFront.forward();
         motorRear.run();
+        motorFront.run();
       }
       else if (!btnDown && btnUp)
       {
         motorRear.reverse();
+        motorFront.reverse();
         motorRear.run();
+        motorFront.run();
+      }
+      else
+      {
+        //Intentionally empty
       }
       
 #ifdef DEBUG
-      Serial.println(speed);
-      //motorRear.changeSpeed(speed);
-      //motorRear.run();
+      Serial.print("Speed: ");
+      Serial.print(speed);
+      Serial.print(", Btn up: ");
+      Serial.print(btnUp);
+      Serial.print(", Btn down: ");
+      Serial.print(btnDown);
+      Serial.println();
 #endif
     }
   }

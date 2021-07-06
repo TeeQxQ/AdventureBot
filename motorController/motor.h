@@ -35,11 +35,16 @@
     //Constructor
     Motor(const int pin_direction_in1,
           const int pin_direction_in2,
-          const int pin_pwm) : config(pin_direction_in1, pin_direction_in2, pin_pwm)
+          const int pin_pwm,
+          const Motor::Direction defaultDirection) : config(pin_direction_in1, pin_direction_in2, pin_pwm),
+                                                    defaultDirection(defaultDirection)
     {
       pinMode(this->config.pin_pwm, OUTPUT);
       pinMode(this->config.pin_direction_in1, OUTPUT);
       pinMode(this->config.pin_direction_in2, OUTPUT);
+
+      //Set current direction to default
+      this->resetDirection();
 
       //By default, stop the motor
       this->stop();
@@ -57,7 +62,7 @@
     //Starts the motor
     void run()
     {
-      if (this->direction == Motor::Direction::CLOCKWISE)
+      if (this->direction == Motor::Direction::COUNTERCLOCKWISE)
       {
         digitalWrite(this->config.pin_direction_in1, LOW);
         digitalWrite(this->config.pin_direction_in2, HIGH);
@@ -94,6 +99,11 @@
       analogWrite(this->config.pin_pwm, this->convertSpeedToPWM());
     }
 
+    void resetDirection()
+    {
+      this->direction = this->defaultDirection;
+    }
+
     void changeDirection()
     {
       if (this->direction == Motor::Direction::CLOCKWISE)
@@ -108,12 +118,26 @@
 
     void reverse()
     {
-      this->direction = Motor::Direction::COUNTERCLOCKWISE;
+      //this->direction = Motor::Direction::COUNTERCLOCKWISE;
+      if (this->defaultDirection == Motor::Direction::CLOCKWISE)
+      {
+        this->direction = Motor::Direction::COUNTERCLOCKWISE;
+      }
+      else
+      {
+        this->direction = Motor::Direction::CLOCKWISE;
+      }
     }
 
     void forward()
     {
-      this->direction = Motor::Direction::CLOCKWISE;
+      //this->direction = Motor::Direction::CLOCKWISE;
+      this->direction = this->defaultDirection;
+    }
+
+    void setDefaultDirection(Motor::Direction newDefaultDirection)
+    {
+      this->defaultDirection = newDefaultDirection;
     }
     
 
@@ -122,7 +146,8 @@
     const int MIN_SPEED = 0;
     const int MAX_PWM_SPEED = PWMRANGE;
     const int MIN_PWM_SPEED = 0;
-    const Motor::Config config;
+    Motor::Config config;
+    Motor::Direction defaultDirection;
     Motor::Direction direction = Motor::Direction::CLOCKWISE;
     int speed = 0;
 
@@ -131,6 +156,33 @@
       return map(this->speed, MIN_SPEED, MAX_SPEED, MIN_PWM_SPEED, MAX_PWM_SPEED);
     }
     
+ };
+
+ class MotorGroup
+ {
+  public:
+    MotorGroup()
+    {
+      
+    }
+
+    //Target speed for the motors in the group
+    void changeSpeed()
+    {
+      //
+    }
+
+    void reverse()
+    {
+      //
+    }
+
+    void forward()
+    {
+      //
+    }
+  private:
+    //
  };
 
 #endif
