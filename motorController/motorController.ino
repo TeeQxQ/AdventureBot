@@ -17,15 +17,19 @@ const int PIN_REAR_DIR_2 = 4;       //D2
 const int PIN_FRONT_DIR_1 = 5;      //D1
 const int PIN_FRONT_DIR_2 = 12;     //D6
 
+Motor motorRear(PIN_REAR_DIR_1, PIN_REAR_DIR_2, PIN_PWM_REAR, Motor::Direction::CLOCKWISE);
+Motor motorFront(PIN_FRONT_DIR_1, PIN_FRONT_DIR_2, PIN_PWM_FRONT, Motor::Direction::CLOCKWISE);
+
 #ifdef USE_ENCODER
 const int PIN_REAR_ENCODER_A = 0;
 const int PIN_REAR_ENCODER_B = 0;
 const int PIN_FRONT_ENCODER_A = 0;
 const int PIN_FRONT_ENCODER_B = 0;
+
+Encoder encoderRear(PIN_REAR_ENCODER_A, PIN_REAR_ENCODER_B);
+Encoder encoderFront(PIN_FRONT_ENCODER_A, PIN_FRONT_ENCODER_B);
 #endif
 
-Motor motorRear(PIN_REAR_DIR_1, PIN_REAR_DIR_2, PIN_PWM_REAR, Motor::Direction::CLOCKWISE);
-Motor motorFront(PIN_FRONT_DIR_1, PIN_FRONT_DIR_2, PIN_PWM_FRONT, Motor::Direction::CLOCKWISE);
 
 #ifdef USE_WIFI
 //Wifi access point (AP) parameters:
@@ -58,7 +62,7 @@ void setup() {
   //Explicitely define this is a station, not access point
   WiFi.mode(WIFI_STA);
 
-  Serial.println(WiFi.macAddress());
+  //Serial.println(WiFi.macAddress());
 
   //IP based on mac address
   if (WiFi.macAddress() == MAC_LEFT)
@@ -72,7 +76,6 @@ void setup() {
     ip = IPAddress(192, 168, 4, 4);
     motorRear.setDefaultDirection(Motor::Direction::CLOCKWISE);
     motorFront.setDefaultDirection(Motor::Direction::CLOCKWISE);
-    Serial.println("Terve");
   }
 
   //Set static ip address (based on mac)
