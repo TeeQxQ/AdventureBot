@@ -17,8 +17,8 @@ const int PIN_REAR_DIR_2 = 4;       //D2
 const int PIN_FRONT_DIR_1 = 5;      //D1
 const int PIN_FRONT_DIR_2 = 12;     //D6
 
-Motor motorRear(PIN_REAR_DIR_1, PIN_REAR_DIR_2, PIN_PWM_REAR, Motor::Direction::CLOCKWISE);
-Motor motorFront(PIN_FRONT_DIR_1, PIN_FRONT_DIR_2, PIN_PWM_FRONT, Motor::Direction::CLOCKWISE);
+Motor motorLeft(PIN_REAR_DIR_1, PIN_REAR_DIR_2, PIN_PWM_REAR, Motor::Direction::CLOCKWISE);
+Motor motorRight(PIN_FRONT_DIR_1, PIN_FRONT_DIR_2, PIN_PWM_FRONT, Motor::Direction::CLOCKWISE);
 
 #ifdef USE_ENCODER
 const int PIN_REAR_ENCODER_A = 0;
@@ -68,14 +68,14 @@ void setup() {
   if (WiFi.macAddress() == MAC_LEFT)
   {
     ip = IPAddress(192, 168, 4, 3);
-    motorRear.setDefaultDirection(Motor::Direction::COUNTERCLOCKWISE);
-    motorFront.setDefaultDirection(Motor::Direction::COUNTERCLOCKWISE);
+    motorLeft.setDefaultDirection(Motor::Direction::CLOCKWISE);
+    motorRight.setDefaultDirection(Motor::Direction::CLOCKWISE);
   }
   else if (WiFi.macAddress() == MAC_RIGHT)
   {
     ip = IPAddress(192, 168, 4, 4);
-    motorRear.setDefaultDirection(Motor::Direction::CLOCKWISE);
-    motorFront.setDefaultDirection(Motor::Direction::CLOCKWISE);
+    motorLeft.setDefaultDirection(Motor::Direction::CLOCKWISE);
+    motorRight.setDefaultDirection(Motor::Direction::CLOCKWISE);
   }
 
   //Set static ip address (based on mac)
@@ -102,8 +102,8 @@ void setup() {
 
 #endif
 
-  motorRear.stop();
-  motorFront.stop();
+  motorLeft.stop();
+  motorRight.stop();
 }
 
 void loop() {
@@ -116,15 +116,49 @@ void loop() {
     {
       udpPacket[len] = 0;
       int speed = udpPacket[0];
-      int btnUp = udpPacket[1];
-      int btnDown = udpPacket[2];
+      int btnLeftUp = udpPacket[1];
+      int btnLeftDown = udpPacket[2];
+      int btnRightUp = udpPacket[3];
+      int btnRightDown = udpPacket[4];
 
-      motorRear.changeSpeed(speed);
-      motorFront.changeSpeed(speed);
-      
-      if (btnUp && btnDown)
+      motorLeft.changeSpeed(speed);
+      motorRight.changeSpeed(speed);
+
+      //Left
+      if (btnLeftUp && btnLeftDown)
       {
-        motorRear.stop();
+        motorLeft.stop();
+      }
+      else if (!btnLeftUp && btnLeftDown)
+      {
+        motorLeft.forward();
+        motorLeft.run();
+      }
+      else if (btnLeftUp && !btnLeftDown)
+      {
+        motorLeft.reverse();
+        motorLeft.run();
+      }
+
+      //Right
+      if (btnRightUp && btnRightDown)
+      {
+        motorRight.stop();
+      }
+      else if (!btnRightUp && btnRightDown)
+      {
+        motorRight.forward();
+        motorRight.run();
+      }
+      else if (btnRightUp && !btnRightDown)
+      {
+        motorRight.reverse();
+        motorRight.run();
+      }
+      
+      /*if (btnUp && btnDown)
+      {
+        motorLeft.stop();
         motorFront.stop();
       }
       else if (!btnUp && btnDown)
@@ -144,15 +178,19 @@ void loop() {
       else
       {
         //Intentionally empty
-      }
+      }*/
       
 #ifdef DEBUG
       Serial.print("Speed: ");
       Serial.print(speed);
-      Serial.print(", Btn up: ");
-      Serial.print(btnUp);
-      Serial.print(", Btn down: ");
-      Serial.print(btnDown);
+      Serial.print(", Btn left up: ");
+      Serial.print(btnLeftUp);
+      Serial.print(", Btn left down: ");
+      Serial.print(btnLeftDown);
+      Serial.print(", Btn right up: ");
+      Serial.print(btnRightUp);
+      Serial.print(", Btn right down: ");
+      Serial.print(btnRightDown);
       Serial.println();
 #endif
     }

@@ -163,12 +163,13 @@ void loop() {
   udpPacket[0] = potValue;
   udpPacket[1] = digitalRead(PIN_BTN_LEFT_UP);
   udpPacket[2] = digitalRead(PIN_BTN_LEFT_DOWN);
+  udpPacket[3] = digitalRead(PIN_BTN_RIGHT_UP);
+  udpPacket[4] = digitalRead(PIN_BTN_RIGHT_DOWN);
+
   udpLeft.beginPacket(IP_LEFT, UDP_PORT_LEFT);
   udpLeft.write(udpPacket);
   udpLeft.endPacket();
 
-  udpPacket[1] = digitalRead(PIN_BTN_RIGHT_UP);
-  udpPacket[2] = digitalRead(PIN_BTN_RIGHT_DOWN);
   udpRight.beginPacket(IP_RIGHT, UDP_PORT_RIGHT);
   udpRight.write(udpPacket);
   udpRight.endPacket();          
